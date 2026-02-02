@@ -1108,11 +1108,10 @@ moves_loop:  // When in check, search starts here
                     continue;
                 }
 
-                lmrDepth = std::max(lmrDepth, 0);
+                lmrDepth = std::max(lmrDepth, 0)
 
-                // Prune moves with negative SEE
-                if (!pos.see_ge(move, -25 * lmrDepth * lmrDepth))
-                    continue;
+                // Prune moves with negative SEE, but allow moves with good history to pass
+                int seeMargin = -25 * lmrDepth * lmrDepth;  if (history > 0)  seeMargin -= history / 8;  if (!pos.see_ge(move, seeMargin))  continue; 
             }
         }
 
