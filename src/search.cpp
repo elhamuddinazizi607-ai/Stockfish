@@ -741,14 +741,14 @@ Value Search::Worker::search(
                        unadjustedStaticEval, tt.generation());
     }
 
-    // Set up the improving flag, which is true if current static evaluation is
+    // Set up the improving flag, which is true if the TT-corrected evaluation is
     // bigger than the previous static evaluation at our turn (if we were in
     // check at our previous move we go back until we weren't in check) and is
     // false otherwise. The improving flag is used in various pruning heuristics.
-    // Similarly, opponentWorsening is true if our static evaluation is better
-    // for us than at the last ply.
-    improving         = ss->staticEval > (ss - 2)->staticEval;
-    opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+    // Similarly, opponentWorsening is true if our current TT-corrected evaluation is better
+    // for us than our static evaluation at the last ply.
+    improving         = ss->eval > (ss - 2)->staticEval;
+    opponentWorsening = ss->eval > -(ss - 1)->staticEval;
 
     // Hindsight adjustment of reductions based on static evaluation difference.
     if (priorReduction >= 3 && !opponentWorsening)
