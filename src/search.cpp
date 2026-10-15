@@ -1848,7 +1848,11 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
                 continue;
 
             // Do not search moves with bad enough SEE values
-            if (!pos.see_ge(move, -74))
+            int margin = 74;
+            if (move.type_of() == NORMAL)
+                margin += captureHistory[pos.moved_piece(move)][move.to_sq()]
+                                        [type_of(pos.piece_on(move.to_sq()))] * 34 / 1024;
+            if (!pos.see_ge(move, -margin))
                 continue;
         }
 
