@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,10 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+// [improving][opponentWorsening]; [1][1] is the reference cell, fixed at 0
+int reductionLut[2][2] = {{0, 0}, {0, 0}};
+TUNE(SetRange(-1024, 1024), reductionLut[0][0], reductionLut[0][1], reductionLut[1][0]);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -1388,7 +1393,10 @@ moves_loop:  // When in check, search starts here
         // When seeking a mate, reduce non-checking moves more and checking moves less
         if (seekMate && r > 0)
             r += (givesCheck ? -r : r) / 4;
-
+          
+        if (!ss->inCheck)
+            r += reductionLut[improving][opponentWorsening];
+          
         // Apply the computed LMR
         if (depth >= 2 && moveCount > 1)
         {
