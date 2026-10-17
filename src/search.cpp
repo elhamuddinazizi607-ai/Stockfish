@@ -1393,10 +1393,10 @@ moves_loop:  // When in check, search starts here
         // When seeking a mate, reduce non-checking moves more and checking moves less
         if (seekMate && r > 0)
             r += (givesCheck ? -r : r) / 4;
-          
+
         if (!ss->inCheck)
             r += reductionLut[improving][opponentWorsening];
-          
+
         // Apply the computed LMR
         if (depth >= 2 && moveCount > 1)
         {
