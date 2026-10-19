@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,12 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int K1 = 0;
+int K2 = 0;
+
+TUNE(SetRange(-3000, 3000), K1);
+TUNE(SetRange(-32, 32), K2);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -1023,9 +1030,13 @@ Value Search::Worker::search(
         Value futilityMult = std::min(45 + depth * 4, 85);
         futilityMult -= 20 * !ss->ttHit;
 
-        Value futilityMargin = futilityMult * depth
-                             - (2789 * improving + 335 * opponentWorsening) * futilityMult / 1024
-                             + std::abs(correctionValue) / 198435;
+        int shift = 2789 * improving + 335 * opponentWorsening
+          + K1 * improving * opponentWorsening;
+        int64_t x = 1024 * depth - shift;
+        int64_t curved = x + K2 * (x * x >> 10) / 1024;
+
+        Value futilityMargin = futilityMult * curved / 1024
+                     + std::abs(correctionValue) / 198435;
 
         if (eval - futilityMargin >= beta)
             return (661 * beta + 363 * eval) / 1024;
