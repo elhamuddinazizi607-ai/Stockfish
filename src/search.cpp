@@ -74,7 +74,7 @@ namespace {
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
 
 int FutilityMult[18] = {49, 53, 57, 61, 65, 69, 73, 77, 81, 85, 85, 85, 85, 85, 85, 85, 85, 85};
-TUNE(SetRange(-100, 100), FutilityMult);
+TUNE(SetRange(0, 100), FutilityMult);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
