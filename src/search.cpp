@@ -1000,7 +1000,7 @@ Value Search::Worker::search(
         goto moves_loop;
 
     // Use static evaluation difference to improve quiet move ordering
-    if (((ss - 1)->currentMove).is_ok() && !(ss - 1)->inCheck && !priorCapture)
+    if (!excludedMove && ((ss - 1)->currentMove).is_ok() && !(ss - 1)->inCheck && !priorCapture)
     {
         int evalDiff = std::clamp(-int((ss - 1)->staticEval + ss->staticEval), -189, 194) + 60;
         mainHistory[~us][((ss - 1)->currentMove).raw()] << evalDiff * 11;
@@ -1607,7 +1607,7 @@ moves_loop:  // When in check, search starts here
     }
 
     // Bonus for prior quiet countermove that caused the fail low
-    else if (!priorCapture && prevSq != SQ_NONE)
+    else if (!excludedMove && !priorCapture && prevSq != SQ_NONE)
     {
         int bonusScale = -241;
         bonusScale -= (ss - 1)->statScore / 98;
@@ -1632,7 +1632,7 @@ moves_loop:  // When in check, search starts here
     }
 
     // Bonus for prior capture countermove that caused the fail low
-    else if (prevSq != SQ_NONE)
+    else if (!excludedMove && prevSq != SQ_NONE)
     {
         assert(priorCapture);
 
@@ -1661,7 +1661,7 @@ moves_loop:  // When in check, search starts here
 
     // Adjust correction history if the best move is not a capture and
     // the error direction matches whether we are above/below bounds.
-    if (!ss->inCheck && !(bestMove && pos.capture(bestMove))
+    if (!excludedMove && !ss->inCheck && !(bestMove && pos.capture(bestMove))
         && (bestValue > ss->staticEval) == bool(bestMove))
     {
         auto bonus =
