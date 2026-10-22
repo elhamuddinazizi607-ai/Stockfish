@@ -1602,7 +1602,7 @@ moves_loop:  // When in check, search starts here
     {
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
                          ttData.move, PvNode);
-        if (!PvNode)
+        if (!PvNode && ttData.move)
             ttMoveHistory << (bestMove == ttData.move ? 918 : -747);
     }
 
