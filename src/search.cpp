@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,10 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int improvingMargin = 0;
+int opponentMargin = 0;
+TUNE(SetRange(-62, 62), improvingMargin, opponentMargin);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -872,14 +877,15 @@ Value Search::Worker::search(
                        unadjustedStaticEval, tt.generation());
     }
 
-    // Set up the improving flag, which is true if current static evaluation is
-    // bigger than the previous static evaluation at our turn (if we were in
-    // check at our previous move we go back until we weren't in check) and is
-    // false otherwise. The improving flag is used in various pruning heuristics.
+    // Set up the improving flag, which is true if the current static evaluation
+    // exceeds the previous static evaluation at our turn (if we were in check at
+    // our previous move we go back until we weren't in check) by more than
+    // improvingMargin, and is false otherwise. The improving flag is used in
+    // various pruning heuristics.
     // Similarly, opponentWorsening is true if our static evaluation is better
-    // for us than at the last ply.
-    improving         = ss->staticEval > (ss - 2)->staticEval;
-    opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+    // for us than at the last ply by more than opponentMargin.
+    improving         = (ss->staticEval - improvingMargin)  > (ss - 2)->staticEval;
+    opponentWorsening = (ss->staticEval - opponentMargin) > -(ss - 1)->staticEval;
 
     // Hindsight adjustment of reductions based on static evaluation difference
     if (priorReduction >= 3 && !opponentWorsening)
