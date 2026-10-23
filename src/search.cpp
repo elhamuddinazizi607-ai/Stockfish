@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,10 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int xx1 = 65;
+int xx2 = 65;
+TUNE(SetRange(0, 100), xx1, xx2);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -1347,7 +1352,7 @@ moves_loop:  // When in check, search starts here
         // Base reduction offset to compensate for other tweaks
         r += 697;
 
-        r -= moveCount * 65;
+        r -= moveCount * (improving ? xx1 : xx2);
         r -= std::abs(correctionValue) / 26310;
 
         // Increase reduction for cut nodes
