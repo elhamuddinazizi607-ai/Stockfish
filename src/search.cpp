@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,9 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int xx = 16;
+TUNE(SetRange(0, 64), xx);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -1313,7 +1317,9 @@ moves_loop:  // When in check, search starts here
                     update_correction_history(pos, ss, *this, bonus);
                 }
 
-                return value;
+                int num = depth * xx;
+                int den = depth * xx + 16;
+                return beta + (value - beta) * num / den;
             }
 
             // Negative extensions
