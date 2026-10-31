@@ -76,12 +76,24 @@ constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
 
 // Reductions lookup table indexed by depth or move number.
-const std::array<int, MAX_MOVES> reductions = [] {
+int reductionShape = 0;
+int reductionOnset = 0;
+
+std::array<int, MAX_MOVES> makeReductions() {
     std::array<int, MAX_MOVES> table{};
+    const double p = reductionShape / 128.0, c = reductionOnset / 128.0;
     for (usize i = 1; i < table.size(); ++i)
-        table[i] = int(2872 / 128.0 * std::log(i));
+        table[i] = int(2872 / 128.0 *
+            (reductionShape == 0 ? std::log((i + c) / (1 + c))
+                                 : (std::pow(i + c, p) - std::pow(1 + c, p)) / p));
     return table;
-}();
+}
+
+std::array<int, MAX_MOVES> reductions = makeReductions();  // no longer const
+void updateReductions() { reductions = makeReductions(); }
+
+TUNE(SetRange(-128, 128), reductionShape,
+     SetRange(0, 2048),   reductionOnset, updateReductions);
 
 // (*Scalers):
 // The values with Scaler asterisks have proven non-linear scaling.
