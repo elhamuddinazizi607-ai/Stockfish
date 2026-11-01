@@ -79,7 +79,8 @@ using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
 const std::array<int, MAX_MOVES> reductions = [] {
     std::array<int, MAX_MOVES> table{};
     for (usize i = 1; i < table.size(); ++i)
-        table[i] = int(2872 / 128.0 * std::log(i));
+        table[i] = int(718 * (std::pow(i + 51 / 128.0, 4 / 128.0)
+                            - std::pow(1 + 51 / 128.0, 4 / 128.0)));
     return table;
 }();
 
