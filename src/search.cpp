@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,16 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int xx0 = 0;
+int xx1 = 0;
+int xx2 = 0;
+int xx3 = 0;
+
+TUNE(SetRange(-62, 62), xx0);
+TUNE(SetRange(-20, 20), xx1);
+TUNE(SetRange(-62, 62), xx2);
+TUNE(SetRange(-20, 20), xx3);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -886,8 +897,8 @@ Value Search::Worker::search(
     // false otherwise. The improving flag is used in various pruning heuristics.
     // Similarly, opponentWorsening is true if our static evaluation is better
     // for us than at the last ply.
-    improving         = ss->staticEval > (ss - 2)->staticEval;
-    opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+    improving         = ss->staticEval + xx0 + int(xx1 * std::log2(depth)) > (ss - 2)->staticEval;
+    opponentWorsening = ss->staticEval + xx2 + int(xx3 * std::log2(depth)) > -(ss - 1)->staticEval;
 
     // Hindsight adjustment of reductions based on static evaluation difference
     if (priorReduction >= 3 && !opponentWorsening)
