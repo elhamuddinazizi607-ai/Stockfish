@@ -775,7 +775,7 @@ Value Search::Worker::search(
     Value bestValue, value, eval, maxValue, probCutBeta;
     bool  givesCheck, improving, priorCapture, opponentWorsening;
     bool  capture, ttCapture;
-    int   priorReduction;
+    int   priorReduction, worseningDiff;
     Piece movedPiece;
 
     SearchedList capturesSearched;
@@ -881,8 +881,9 @@ Value Search::Worker::search(
     // false otherwise. The improving flag is used in various pruning heuristics.
     // Similarly, opponentWorsening is true if our static evaluation is better
     // for us than at the last ply.
+    worseningDiff = ss->staticEval + (ss - 1)->staticEval;
     improving         = ss->staticEval > (ss - 2)->staticEval;
-    opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+    opponentWorsening = worseningDiff > 0;
 
     // Hindsight adjustment of reductions based on static evaluation difference
     if (priorReduction >= 3 && !opponentWorsening)
@@ -1392,6 +1393,14 @@ moves_loop:  // When in check, search starts here
         // When seeking a mate, reduce non-checking moves more and checking moves less
         if (seekMate && r > 0)
             r += (givesCheck ? -r : r) / 4;
+
+        int worseningAdj = 0;
+        if (!ss->inCheck && !(ss - 1)->inCheck && ((ss - 1)->currentMove).is_ok()) {
+            const int x = worseningDiff + 7;
+            worseningAdj = std::clamp((x > 0 ? 814 : 1151) * x / 1024, -912, 1037);
+        }
+
+        r += worseningAdj;
 
         // Apply the computed LMR
         if (depth >= 2 && moveCount > 1)
