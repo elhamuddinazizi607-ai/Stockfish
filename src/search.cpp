@@ -83,6 +83,20 @@ const std::array<int, MAX_MOVES> reductions = [] {
     return table;
 }();
 
+const std::array<int, MAX_PLY> improvingBias = [] {
+    std::array<int, MAX_PLY> table{};
+    for (int i = 1; i < MAX_PLY; ++i)
+        table[i] = int(std::lround(8.47 + 0.71 * std::log2(i)));
+    return table;
+}();
+
+const std::array<int, MAX_PLY> opponentWorseningBias = [] {
+    std::array<int, MAX_PLY> table{};
+    for (int i = 1; i < MAX_PLY; ++i)
+        table[i] = int(std::lround(3.49 - 1.79 * std::log2(i)));
+    return table;
+}();
+
 // (*Scalers):
 // The values with Scaler asterisks have proven non-linear scaling.
 // They are optimized to time controls of 180 + 1.8 and longer,
@@ -875,14 +889,14 @@ Value Search::Worker::search(
                        unadjustedStaticEval, tt.generation());
     }
 
-    // Set up the improving flag, which is true if current static evaluation is
+    // Set up the improving flag, which is true if current static evaluation minus a bias is
     // bigger than the previous static evaluation at our turn (if we were in
     // check at our previous move we go back until we weren't in check) and is
     // false otherwise. The improving flag is used in various pruning heuristics.
-    // Similarly, opponentWorsening is true if our static evaluation is better
+    // Similarly, opponentWorsening is true if our static evaluation minus a bias is better
     // for us than at the last ply.
-    improving         = ss->staticEval > (ss - 2)->staticEval;
-    opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+    improving         = ss->staticEval - improvingBias[depth] > (ss - 2)->staticEval;
+    opponentWorsening = ss->staticEval - opponentWorseningBias[depth] > -(ss - 1)->staticEval;
 
     // Hindsight adjustment of reductions based on static evaluation difference
     if (priorReduction >= 3 && !opponentWorsening)
