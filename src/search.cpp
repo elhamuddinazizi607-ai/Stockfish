@@ -46,6 +46,7 @@
 #include "thread.h"
 #include "timeman.h"
 #include "tt.h"
+#include "tune.h"
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
@@ -71,6 +72,18 @@ using namespace Search;
 namespace {
 
 constexpr u64 NODES_LIMIT_OUTPUT = 10'000'000;
+
+int hsLo = 0;
+int hsHi = 100;
+int hsFar = 200;
+int hsMaxDepth = 7;
+constexpr int hsRedUp = 2;
+constexpr int hsRedDown = 2;
+
+TUNE(SetRange(-60, 40), hsLo);
+TUNE(SetRange(40, 200), hsHi);
+TUNE(SetRange(120, 320), hsFar);
+TUNE(SetRange(4, 14), hsMaxDepth);
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -883,11 +896,17 @@ Value Search::Worker::search(
     improving         = ss->staticEval > (ss - 2)->staticEval;
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
 
-    // Hindsight adjustment of reductions based on static evaluation difference
-    if (priorReduction >= 3 && !opponentWorsening)
-        depth++;
-    if (priorReduction >= 2 && depth >= 2 && ss->staticEval + (ss - 1)->staticEval > 166)
-        depth--;
+    // Hindsight adjustment of the parent's reduction by distance to beta: reductions are
+    // most likely wrong when our eval is just above beta, and safe when far above it.
+    if (!ss->inCheck)
+    {
+      const int windowDist = ss->staticEval - beta;
+      if (priorReduction >= hsRedUp && windowDist > hsLo && windowDist <= hsHi
+          && depth + priorReduction <= hsMaxDepth)
+          depth++;
+      else if (priorReduction >= hsRedDown && depth >= 2 && windowDist > hsFar)
+          depth--;
+    }
 
     // Step 6. At non-PV nodes we check for an early TT cutoff. Note that we
     //         always check the validity of the TT value because of access races.
