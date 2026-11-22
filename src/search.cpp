@@ -1183,6 +1183,9 @@ moves_loop:  // When in check, search starts here
         if (PvNode)
             r -= 512;
 
+        if (priorCapture && !(capture || givesCheck))
+            r += improving ? 200 : 400;
+
         // Increase reduction for ttPv nodes
         // (*Scaler) Larger values scale well.
         if (ss->ttPv)
