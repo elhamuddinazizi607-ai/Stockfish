@@ -869,10 +869,19 @@ Value Search::Worker::search(
     improving         = ss->staticEval > (ss - 2)->staticEval;
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
 
-    // Hindsight adjustment of reductions based on static evaluation difference
-    if (priorReduction >= 3 && !opponentWorsening)
+    // Hindsight adjustment of reductions: compare the static eval with this node's
+    // bound (beta == -alpha of the reducing parent). In check the eval is inherited
+    // from two plies ago, so the eval swing is used instead.
+    if (ss->inCheck)
+    {
+        if (priorReduction >= 3 && !opponentWorsening)
+            depth++;
+        if (priorReduction >= 2 && depth >= 2 && ss->staticEval + (ss - 1)->staticEval > 166)
+            depth--;
+    }
+    else if (priorReduction >= 3 && ss->staticEval > beta - 150 && ss->staticEval <= beta + 50)
         depth++;
-    if (priorReduction >= 2 && depth >= 2 && ss->staticEval + (ss - 1)->staticEval > 166)
+    else if (priorReduction >= 2 && depth >= 2 && ss->staticEval > beta + 100)
         depth--;
 
     // Step 6. At non-PV nodes we check for an early TT cutoff. Note that we
